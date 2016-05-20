@@ -1,0 +1,88 @@
+/* Bu kodlar Ilayda Adiguzel (gri kafa) tarafindan hazirlanmistir. Herhangi bir hakki falan zaten yok sadece kullanip 
+paylasacaksaniz eger, adimin gecmesinden baska bir sey istemiyorum :) 
+
+İlayda 2016  */
+
+#include <Servo.h>  /*kütüphanelerimizi yerleştirdik */
+#include <SPI.h>
+#include <RFID.h>
+
+RFID naci(10,9);  /*RFID mizi nesne olarak tanımladık */ 
+
+
+const byte k = 7; /* RGB ledin takıldığı pinlere değişken atadık k=kırmızı , y=yeşil m=mavi (kullanılan led anottur.) */
+const byte y = 6;   
+const byte m = 5;
+
+
+
+Servo selviBoylum;  /*Servomuzu nesne olarak tanımladık ve pozisyon(pos) adında bir değişken oluşturduk*/
+int pos = 0;
+
+boolean izin = true; /*izin adında bir mantık değişkeni oluşturduk */
+
+byte kart[5] = {192,146,31,43,102}; /* buraya doğru olarak okutacağımız kartın ID'sini yazıyoruz */
+
+void setup() {
+  
+SPI.begin();         //SPI haberleşmeyi başlattık
+Serial.begin(9600); //Seri portu başlattık 
+naci.init();        //RFID yi başlattık
+
+
+pinMode(k,OUTPUT);  //RGB ledin pinMode larını ayarladık
+pinMode(y,OUTPUT);
+pinMode(m,OUTPUT);
+
+selviBoylum.attach(3);//Servo'nun kaçıncı pine bağlı olduğunu belirttik
+
+}
+
+void loop() {
+
+if (naci.isCard()){
+  if(naci.readCardSerial()){                  /*eğer RFID kart görürse kartın Seri numarasını okur ve ekrana yazdırır. Böylece doğru
+                                              okutmak istediğiniz kartın ID'sini kart dizisine (yukarıda) yazabilirsiniz*/
+  }
+  Serial.println("kart ID: ");
+      Serial.print(naci.serNum[0]);
+      Serial.print(" , ");
+      Serial.print(naci.serNum[1]);
+      Serial.print(" , ");
+      Serial.print(naci.serNum[2]);
+      Serial.print(" , ");
+      Serial.print(naci.serNum[3]);
+      Serial.print(" , ");
+      Serial.print(naci.serNum[4]);
+      Serial.println(" ");
+    }
+      for(int i=0; i<5; i++)               
+    {
+      if(naci.serNum[i] != kart[i])   //eğer nacinin okuduğu kart numarası doğru değilse(kart dizisindekine eşit değilse 
+      
+      {
+        izin = false; //izin verme
+      }
+    }
+    if(izin==true)                 //eğer izin verildiyse (doğru kart okutulduysa)
+    {
+      Serial.println("izin Verildi"); //seri port ekranına "izin verildi" yazdır
+      digitalWrite(y,HIGH);    //RGB ledi yeşil yak 
+      digitalWrite(k,LOW);
+      digitalWrite(m,LOW);
+      selviBoylum.write(30); //Servoyu 30 dereceye getir
+      delay(100); //100 milisaniye bekle
+    } 
+    else  //eğer izin verilmediyse (yanlış kart okutulduğunda)
+    {
+     Serial.println("izinsiz Giris"); //seri port'a "izinsiz giriş" yazdır
+     digitalWrite(k, HIGH); //RGB ledi kırmızı yak
+     digitalWrite(m, LOW);
+     digitalWrite(y,LOW);
+
+    }
+  
+  }
+naci.halt(); //Rfidyi durdur. 
+  }
+  
